@@ -1,0 +1,6 @@
+[dotenv@17.2.3] injecting env (0) from .env -- tip: 👥 sync secrets across teammates & machines: https://dotenvx.com/ops
+🚀 vulNSecure Test Server running on port 5000
+📊 Health check: http://localhost:5000/health
+🔧 API test: http://localhost:5000/api/test
+🔐 Login test: POST http://localhost:5000/api/auth/login
+📈 Dashboard: http://localhost:5000/api/dashboard/stats

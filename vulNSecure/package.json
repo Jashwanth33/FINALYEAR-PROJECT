@@ -1,0 +1,34 @@
+{
+  "name": "vulnsecure-platform",
+  "version": "1.0.0",
+  "description": "H4$HCR4CK & vulNSecure - Integrated Cyber Threat Intelligence and Vulnerability Scanning Platform",
+  "main": "index.js",
+  "scripts": {
+    "dev": "concurrently \"npm run server\" \"npm run client\"",
+    "server": "cd backend && npm run dev",
+    "client": "cd frontend && npm start",
+    "build": "cd frontend && npm run build",
+    "test": "jest",
+    "install-all": "npm install && cd backend && npm install && cd ../frontend && npm install"
+  },
+  "keywords": [
+    "cybersecurity",
+    "vulnerability-scanning",
+    "threat-intelligence",
+    "dark-web-monitoring",
+    "cve-integration"
+  ],
+  "author": "vulNSecure Team",
+  "license": "MIT",
+  "devDependencies": {
+    "concurrently": "^8.2.2",
+    "jest": "^29.7.0"
+  },
+  "dependencies": {
+    "cors": "^2.8.5",
+    "dotenv": "^17.2.3",
+    "express": "^5.1.0",
+    "helmet": "^8.1.0",
+    "morgan": "^1.10.1"
+  }
+}
