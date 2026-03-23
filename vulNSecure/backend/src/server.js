@@ -28,12 +28,18 @@ const { initializeScheduledJobs } = require('./routes/schedules');
 const { logger } = require('./utils/logger');
 
 const app = express();
-const PORT = process.env.PORT || 5000;
+const PORT = process.env.PORT || 5001;
 
 // CORS configuration - MUST be before other middleware
 app.use(cors({
   origin: process.env.NODE_ENV === 'production' 
-    ? ['https://yourdomain.com'] 
+    ? [
+        process.env.FRONTEND_URL || 'https://vulnsecure-frontend.onrender.com',
+        /\.onrender\.com$/,
+        /\.vercel\.app$/,
+        /\.netlify\.app$/,
+        /localhost/
+      ]
     : ['http://localhost:3000', 'http://127.0.0.1:3000'],
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],

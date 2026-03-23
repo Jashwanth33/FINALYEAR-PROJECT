@@ -1,0 +1,47 @@
+services:
+  - type: web
+    name: vulnsecure-backend
+    runtime: node
+    buildCommand: cd vulNSecure/backend && npm install
+    startCommand: cd vulNSecure/backend && node src/server.js
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 5001
+      - key: JWT_SECRET
+        generateValue: true
+      - key: DB_HOST
+        fromDatabase:
+          name: vulnsecure-db
+          property: host
+      - key: DB_PORT
+        fromDatabase:
+          name: vulnsecure-db
+          property: port
+      - key: DB_NAME
+        fromDatabase:
+          name: vulnsecure-db
+          property: database
+      - key: DB_USER
+        fromDatabase:
+          name: vulnsecure-db
+          property: user
+      - key: DB_PASS
+        fromDatabase:
+          name: vulnsecure-db
+          property: password
+
+  - type: web
+    name: vulnsecure-frontend
+    runtime: node
+    buildCommand: cd vulNSecure/frontend && npm install && npm run build
+    startCommand: cd vulNSecure/frontend && npx serve -s build -l 3000
+    envVars:
+      - key: REACT_APP_API_URL
+        value: https://vulnsecure-backend.onrender.com/api
+
+databases:
+  - name: vulnsecure-db
+    databaseName: vulnsecure
+    user: vulnsecure_user
