@@ -16,7 +16,15 @@ const leakRoutes = require('./routes/leaks');
 const cveRoutes = require('./routes/cves');
 const reportRoutes = require('./routes/reports');
 const dashboardRoutes = require('./routes/dashboard');
+const analyticsRoutes = require('./routes/analytics');
+const scheduleRoutes = require('./routes/schedules').router;
+const assetRoutes = require('./routes/assets');
+const advancedRoutes = require('./routes/advanced');
+const extendedRoutes = require('./routes/extended');
+const enterpriseRoutes = require('./routes/enterprise');
+const nextGenRoutes = require('./routes/nextgen');
 const { errorHandler } = require('./middleware/errorHandler');
+const { initializeScheduledJobs } = require('./routes/schedules');
 const { logger } = require('./utils/logger');
 
 const app = express();
@@ -40,19 +48,21 @@ app.use(helmet({
 }));
 app.use(compression());
 
-// Rate limiting
+// Rate limiting - increased limits for development
 const limiter = rateLimit({
-  windowMs: parseInt(process.env.RATE_LIMIT_WINDOW_MS) || 15 * 60 * 1000, // 15 minutes
-  max: parseInt(process.env.RATE_LIMIT_MAX_REQUESTS) || 100, // limit each IP to 100 requests per windowMs
+  windowMs: parseInt(process.env.RATE_LIMIT_WINDOW_MS) || 1 * 60 * 1000, // 1 minute
+  max: parseInt(process.env.RATE_LIMIT_MAX_REQUESTS) || 500, // limit each IP to 500 requests per windowMs
   message: 'Too many requests from this IP, please try again later.',
   standardHeaders: true,
   legacyHeaders: false,
+  skipSuccessfulRequests: true // Don't count successful requests
 });
 
 const speedLimiter = slowDown({
-  windowMs: 15 * 60 * 1000, // 15 minutes
-  delayAfter: 50, // allow 50 requests per 15 minutes, then...
-  delayMs: 500 // begin adding 500ms of delay per request above 50
+  windowMs: 1 * 60 * 1000,
+  delayAfter: 200,
+  delayMs: () => 100,
+  validate: { delayMs: false }
 });
 
 app.use(limiter);
@@ -86,7 +96,21 @@ app.use('/api/leaks', leakRoutes);
 app.use('/api/cves', cveRoutes);
 app.use('/api/reports', reportRoutes);
 app.use('/api/dashboard', dashboardRoutes);
+app.use('/api/analytics', analyticsRoutes);
+app.use('/api/schedules', scheduleRoutes);
+app.use('/api/assets', assetRoutes);
+app.use('/api/advanced', advancedRoutes);
+app.use('/api/extended', extendedRoutes);
+app.use('/api/enterprise', enterpriseRoutes);
+app.use('/api/nextgen', nextGenRoutes);
 app.use('/api/notifications', require('./routes/notifications'));
+app.use('/api/pro', require('./routes/proFeatures'));
+app.use('/api/enhanced', require('./routes/enhanced'));
+app.use('/api/professional', require('./routes/professional'));
+app.use('/api/advanced', require('./routes/advancedPro'));
+app.use('/api/complete', require('./routes/complete'));
+app.use('/api/new', require('./routes/newFeatures'));
+app.use('/api/final', require('./routes/completeNew'));
 
 // Static files for uploads
 app.use('/uploads', express.static('uploads'));
@@ -110,13 +134,15 @@ const startServer = async () => {
     
     // Sync database models
     if (process.env.NODE_ENV === 'development') {
-      // Use force: false to avoid dropping tables, and alter: false to avoid constraint issues
       await sequelize.sync({ alter: false, force: false });
       logger.info('Database models synchronized');
     }
     
     app.listen(PORT, () => {
       logger.info(`Server running on port ${PORT} in ${process.env.NODE_ENV} mode`);
+      initializeScheduledJobs().catch(err => {
+        logger.error('Failed to initialize scheduled jobs:', err);
+      });
     });
   } catch (error) {
     logger.error('Unable to start server:', error);

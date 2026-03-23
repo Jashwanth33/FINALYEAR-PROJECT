@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from 'react-query';
 import { vulnerabilitiesAPI } from '../services/api';
+import toast from 'react-hot-toast';
 import { 
   Shield, 
   AlertTriangle, 
@@ -15,7 +16,10 @@ import {
   TrendingUp,
   Eye,
   Edit3,
-  X
+  X,
+  ExternalLink,
+  Link,
+  Copy
 } from 'lucide-react';
 
 const Vulnerabilities = () => {
@@ -101,6 +105,25 @@ const Vulnerabilities = () => {
       case 'in_progress': return 'bg-yellow-100 text-yellow-800 border-yellow-200';
       case 'resolved': return 'bg-green-100 text-green-800 border-green-200';
       default: return 'bg-gray-100 text-gray-800 border-gray-200';
+    }
+  };
+
+  const getCVSSColor = (cvssScore) => {
+    const score = parseFloat(cvssScore) || 0;
+    if (score >= 9.0) return 'text-red-600 font-bold';
+    if (score >= 7.0) return 'text-red-500 font-semibold';
+    if (score >= 4.0) return 'text-orange-500 font-medium';
+    if (score >= 0.1) return 'text-yellow-500';
+    return 'text-gray-500';
+  };
+
+  const calculateCVSS = (severity) => {
+    switch (severity) {
+      case 'critical': return '9.8';
+      case 'high': return '7.5';
+      case 'medium': return '5.3';
+      case 'low': return '2.8';
+      default: return '5.0';
     }
   };
 
@@ -254,25 +277,63 @@ const Vulnerabilities = () => {
                     
                     <p className="text-sm text-gray-600 mb-3">{vuln.description}</p>
                     
-                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm text-gray-500 mb-3">
+                    <div className="grid grid-cols-2 md:grid-cols-6 gap-4 text-sm text-gray-500 mb-3">
                       <div className="flex items-center space-x-1">
                         <Target className="h-4 w-4" />
                         <span>{vuln.target || vuln.scan?.target || 'N/A'}</span>
                       </div>
+                      <div className="flex items-center space-x-1 col-span-2">
+                        {vuln.url ? (
+                          <div className="flex items-center space-x-1 bg-gray-100 px-2 py-1 rounded truncate">
+                            <code className="text-xs text-gray-700 truncate" title={vuln.url}>
+                              {vuln.url}
+                            </code>
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                navigator.clipboard.writeText(vuln.url);
+                                toast.success('URL copied to clipboard');
+                              }}
+                              className="text-gray-400 hover:text-gray-600"
+                              title="Copy URL"
+                            >
+                              <Copy className="h-3 w-3" />
+                            </button>
+                          </div>
+                        ) : (
+                          <span className="text-gray-400">No URL</span>
+                        )}
+                      </div>
                       <div className="flex items-center space-x-1">
                         <TrendingUp className="h-4 w-4" />
-                        <span>CVSS: {vuln.cvssScore || 'N/A'}</span>
+                        <span className={getCVSSColor(vuln.cvssScore)}>
+                          CVSS: {vuln.cvssScore || calculateCVSS(vuln.severity)}
+                        </span>
+                      </div>
+                      <div className="flex items-center space-x-1">
+                        {vuln.cveId ? (
+                          <a 
+                            href={`https://nvd.nist.gov/vuln/detail/${vuln.cveId}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-red-600 hover:text-red-800 font-medium"
+                            title="View CVE in NIST NVD"
+                          >
+                            {vuln.cveId}
+                          </a>
+                        ) : (
+                          <span className="text-gray-400">No CVE</span>
+                        )}
                       </div>
                       <div className="flex items-center space-x-1">
                         <Clock className="h-4 w-4" />
                         <span>{vuln.discoveredAt ? new Date(vuln.discoveredAt).toLocaleDateString() : vuln.createdAt ? new Date(vuln.createdAt).toLocaleDateString() : 'N/A'}</span>
                       </div>
-                      {vuln.remediation?.assignedTo && (
-                        <div className="flex items-center space-x-1">
-                          <User className="h-4 w-4" />
-                          <span>{vuln.remediation.assignedTo}</span>
-                        </div>
-                      )}
+                    </div>
+                    
+                    <div className="flex items-center space-x-2 text-xs text-gray-500 mb-2">
+                      <span className="px-2 py-1 bg-gray-100 rounded">Category: {vuln.category || 'General'}</span>
+                      {vuln.confirmed && <span className="px-2 py-1 bg-green-100 text-green-800 rounded">Confirmed</span>}
                     </div>
 
                     {vuln.solution && (

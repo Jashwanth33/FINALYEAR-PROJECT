@@ -1,19 +1,29 @@
 import React, { useEffect } from 'react';
-import { useParams } from 'react-router-dom';
-import { useQuery } from 'react-query';
-import { scansAPI } from '../services/api';
+import { useParams, useNavigate } from 'react-router-dom';
+import { useQuery, useMutation, useQueryClient } from 'react-query';
+import { scansAPI, reportsAPI } from '../services/api';
+import toast from 'react-hot-toast';
 import { ArrowLeft, Play, Pause, Trash2, Download } from 'lucide-react';
 
 const ScanDetail = () => {
   const { id } = useParams();
+  const navigate = useNavigate();
+  const queryClient = useQueryClient();
+  
   const { data: scanData, isLoading, error } = useQuery(['scan', id], () => scansAPI.getScan(id));
   
-  // Debug logging
-  useEffect(() => {
-    console.log('🔍 SCAN DETAIL - Scan ID:', id);
-    console.log('🔍 SCAN DETAIL - Scan data:', scanData);
-    console.log('🔍 SCAN DETAIL - Error:', error);
-  }, [id, scanData, error]);
+  const deleteScanMutation = useMutation(
+    (scanId) => scansAPI.deleteScan(scanId),
+    {
+      onSuccess: () => {
+        toast.success('Scan deleted');
+        navigate('/scans');
+      },
+      onError: (err) => {
+        toast.error(err.response?.data?.message || 'Failed to delete');
+      }
+    }
+  );
   
   const scan = scanData?.data?.data?.scan;
 
@@ -170,15 +180,43 @@ const ScanDetail = () => {
           <div className="card">
             <h3 className="text-lg font-semibold text-gray-900 mb-4">Actions</h3>
             <div className="space-y-3">
-              <button className="btn btn-primary w-full flex items-center justify-center">
+              <button 
+                className="btn btn-primary w-full flex items-center justify-center"
+                onClick={async () => {
+                  try {
+                    const response = await reportsAPI.exportScan(id, 'json');
+                    const url = window.URL.createObjectURL(new Blob([response.data]));
+                    const link = document.createElement('a');
+                    link.href = url;
+                    link.setAttribute('download', `scan-${id}-report.json`);
+                    document.body.appendChild(link);
+                    link.click();
+                    link.remove();
+                    toast.success('Report downloaded successfully');
+                  } catch (error) {
+                    console.error('Download failed:', error);
+                    toast.error('Failed to download report');
+                  }
+                }}
+              >
                 <Download className="h-4 w-4 mr-2" />
                 Download Report
               </button>
-              <button className="btn btn-secondary w-full flex items-center justify-center">
+              <button 
+                className="btn btn-secondary w-full flex items-center justify-center"
+                onClick={() => toast.success('Restart scan feature coming soon')}
+              >
                 <Play className="h-4 w-4 mr-2" />
                 Restart Scan
               </button>
-              <button className="btn btn-danger w-full flex items-center justify-center">
+              <button 
+                className="btn btn-danger w-full flex items-center justify-center"
+                onClick={() => {
+                  if (window.confirm('Are you sure you want to delete this scan?')) {
+                    deleteScanMutation.mutate(scan.id);
+                  }
+                }}
+              >
                 <Trash2 className="h-4 w-4 mr-2" />
                 Delete Scan
               </button>

@@ -127,10 +127,29 @@ router.get('/stats', authenticateToken, asyncHandler(async (req, res) => {
       leaks: leakCounts,
       recentScans,
       criticalVulnerabilities,
-      unreadNotifications
+      unreadNotifications,
+      // New stats
+      totalUsers: await User.count({ where: { isActive: true } }),
+      totalCVEs: await CVE.count(),
+      securityScore: calculateSecurityScore(vulnerabilityCounts)
     }
   });
 }));
+
+// Calculate security score based on vulnerabilities
+const calculateSecurityScore = (vulnCounts) => {
+  const weights = { critical: 30, high: 20, medium: 10, low: 5 };
+  let deductions = 0;
+  
+  deductions += (vulnCounts.critical || 0) * weights.critical;
+  deductions += (vulnCounts.high || 0) * weights.high;
+  deductions += (vulnCounts.medium || 0) * weights.medium;
+  deductions += (vulnCounts.low || 0) * weights.low;
+  
+  // Score out of 100
+  const score = Math.max(0, 100 - deductions);
+  return score;
+};
 
 // @route   GET /api/dashboard/charts/vulnerabilities
 // @desc    Get vulnerability chart data

@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from 'react-query';
+import toast from 'react-hot-toast';
 import { 
   DocumentTextIcon,
   DocumentArrowDownIcon,
@@ -59,7 +60,17 @@ const Reports = () => {
   const { data: reportsData, isLoading, error } = useQuery(
     ['reports', searchTerm, filters, sortBy, sortOrder],
     () => reportsAPI.getReports({ search: searchTerm, ...filters, sortBy, sortOrder }),
-    { refetchInterval: 30000 }
+    { 
+      refetchInterval: 60000, // Reduced from 30s to 60s
+      retry: 3,
+      retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000),
+      onError: (error) => {
+        if (error.response?.status === 429) {
+          // Rate limited - wait longer before retrying
+          console.log('Rate limited, will retry after delay');
+        }
+      }
+    }
   );
 
   const generateReportMutation = useMutation(
@@ -121,8 +132,10 @@ const Reports = () => {
       a.click();
       window.URL.revokeObjectURL(url);
       document.body.removeChild(a);
+      toast.success('Report downloaded successfully');
     } catch (error) {
       console.error('Download failed:', error);
+      toast.error('Failed to download report');
     }
   };
 

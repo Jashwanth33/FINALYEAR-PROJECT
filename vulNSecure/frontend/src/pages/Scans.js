@@ -43,7 +43,11 @@ const Scans = () => {
     (scanId) => scansAPI.deleteScan(scanId),
     {
       onSuccess: () => {
+        toast.success('Scan deleted successfully');
         queryClient.invalidateQueries('scans');
+      },
+      onError: (error) => {
+        toast.error(error.response?.data?.message || 'Failed to delete scan');
       }
     }
   );
@@ -414,12 +418,21 @@ const Scans = () => {
                       <button
                         className="p-2 text-gray-500 hover:text-green-600 hover:bg-green-50 rounded-md transition-colors"
                         title="Download Report"
+                        onClick={() => {
+                          toast.success('Report download started');
+                          // Navigate to reports or trigger download
+                          navigate('/reports');
+                        }}
                       >
                         <Download className="h-4 w-4" />
                       </button>
                     )}
                     <button
-                      onClick={() => deleteScanMutation.mutate(scan.id)}
+                      onClick={() => {
+                        if (window.confirm('Are you sure you want to delete this scan?')) {
+                          deleteScanMutation.mutate(scan.id);
+                        }
+                      }}
                       className="p-2 text-gray-500 hover:text-red-600 hover:bg-red-50 rounded-md transition-colors"
                       title="Delete Scan"
                       disabled={deleteScanMutation.isLoading}

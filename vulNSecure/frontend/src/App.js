@@ -1,7 +1,8 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from 'react-query';
 import { ReactQueryDevtools } from 'react-query/devtools';
+import { Toaster } from 'react-hot-toast';
 import { AuthProvider } from './context/AuthContext';
 import { SidebarProvider } from './context/SidebarContext';
 import ErrorBoundary from './components/ErrorBoundary';
@@ -18,6 +19,11 @@ import Leaks from './pages/Leaks';
 import Reports from './pages/Reports';
 import Users from './pages/Users';
 import Profile from './pages/Profile';
+import BinaryAnalysis from './pages/BinaryAnalysis';
+import NetworkScanner from './pages/NetworkScanner';
+import AllFeatures from './pages/AllFeatures';
+import ScheduledScans from './pages/ScheduledScans';
+import Settings from './pages/Settings';
 import ProtectedRoute from './components/ProtectedRoute';
 
 // Create a client with error handling and retry logic
@@ -52,11 +58,62 @@ const queryClient = new QueryClient({
 });
 
 function App() {
+  // Global error handler to filter out WebSocket errors
+  useEffect(() => {
+    const originalConsoleError = console.error;
+    
+    // Override console.error to filter WebSocket errors
+    console.error = (...args) => {
+      const message = args.join(' ');
+      
+      // Filter out WebSocket connection errors
+      if (
+        message.includes('WebSocket connection') ||
+        message.includes('ws://') ||
+        message.includes('wss://') ||
+        message.includes('WebSocket is closed') ||
+        message.includes('ERR_CONNECTION_REFUSED') ||
+        message.includes('socket')
+      ) {
+        // Silent - don't show WebSocket errors to users
+        return;
+      }
+      
+      originalConsoleError.apply(console, args);
+    };
+    
+    // Handle uncaught WebSocket errors
+    window.addEventListener('error', (event) => {
+      if (
+        event.message?.includes?.('WebSocket') ||
+        event.message?.includes?.('ws://') ||
+        event.error?.message?.includes?.('WebSocket')
+      ) {
+        event.preventDefault();
+        return false;
+      }
+    });
+    
+    return () => {
+      console.error = originalConsoleError;
+    };
+  }, []);
+
   return (
     <ErrorBoundary>
       <QueryClientProvider client={queryClient}>
         <AuthProvider>
           <SidebarProvider>
+            <Toaster 
+              position="top-right"
+              toastOptions={{
+                duration: 4000,
+                style: {
+                  background: '#363636',
+                  color: '#fff',
+                },
+              }}
+            />
             <Router
               future={{
                 v7_startTransition: true,
@@ -79,8 +136,18 @@ function App() {
                     <Route path="scans" element={<Scans />} />
                     <Route path="scans/create" element={<CreateScan />} />
                     <Route path="scans/:id" element={<ScanDetail />} />
+                    <Route path="scheduled" element={<ScheduledScans />} />
+                    <Route path="settings" element={<Settings />} />
                     <Route path="leaks" element={<Leaks />} />
                     <Route path="reports" element={<Reports />} />
+                    <Route path="binary" element={<BinaryAnalysis />} />
+                    <Route path="network" element={<NetworkScanner />} />
+                    <Route path="features" element={<AllFeatures />} />
+                    <Route path="compliance" element={<AllFeatures />} />
+                    <Route path="darkweb" element={<AllFeatures />} />
+                    <Route path="supplychain" element={<AllFeatures />} />
+                    <Route path="cicd" element={<AllFeatures />} />
+                    <Route path="team" element={<AllFeatures />} />
                     <Route path="users" element={<Users />} />
                     <Route path="profile" element={<Profile />} />
                   </Route>

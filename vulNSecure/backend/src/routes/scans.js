@@ -1,11 +1,13 @@
 const express = require('express');
+const path = require('path');
+const fs = require('fs');
 const { body, param, query } = require('express-validator');
 const { Op } = require('sequelize');
 const { Scan, Vulnerability, User } = require('../models');
 const { authenticateToken, requireRole } = require('../middleware/auth');
 const { validateRequest, asyncHandler } = require('../middleware/errorHandler');
 const { logger } = require('../utils/logger');
-const { runNmapScan, runZapScan } = require('../services/scannerService');
+const { performScan } = require('../services/scannerService');
 
 const router = express.Router();
 
@@ -16,7 +18,7 @@ router.get('/', authenticateToken, [
   query('page').optional().isInt({ min: 1 }).withMessage('Page must be a positive integer'),
   query('limit').optional().isInt({ min: 1, max: 100 }).withMessage('Limit must be between 1 and 100'),
   query('status').optional().isIn(['pending', 'running', 'completed', 'failed', 'cancelled', 'all']).withMessage('Invalid status'),
-  query('type').optional().isIn(['network', 'web', 'darkweb', 'all']).withMessage('Invalid type'),
+  query('type').optional().isIn(['network', 'web', 'darkweb', 'binary', 'all']).withMessage('Invalid type'),
   query('search').optional().isString().withMessage('Search must be a string'),
   query('sortBy').optional().isString().withMessage('SortBy must be a string'),
   query('sortOrder').optional().isIn(['asc', 'desc']).withMessage('SortOrder must be asc or desc')
@@ -120,7 +122,7 @@ router.get('/:id', authenticateToken, [
 // @access  Private
 router.post('/', authenticateToken, requireRole(['admin', 'analyst', 'viewer']), [
   body('name').isLength({ min: 1, max: 100 }).withMessage('Scan name is required'),
-  body('type').isIn(['network', 'web', 'darkweb']).withMessage('Invalid scan type'),
+  body('type').isIn(['network', 'web', 'darkweb', 'binary']).withMessage('Invalid scan type'),
   body('target').isLength({ min: 1, max: 255 }).withMessage('Target is required'),
   body('configuration').optional().isObject().withMessage('Configuration must be an object')
 ], validateRequest, asyncHandler(async (req, res) => {
@@ -143,16 +145,42 @@ router.post('/', authenticateToken, requireRole(['admin', 'analyst', 'viewer']),
     target
   });
 
-  // Start scan based on type
+    // Start scan based on type
   try {
-    if (type === 'network') {
-      await runNmapScan(scan.id, target, configuration);
-    } else if (type === 'web') {
-      await runZapScan(scan.id, target, configuration);
-    } else if (type === 'darkweb') {
-      // Dark web scan will be implemented separately
-      await scan.update({ status: 'running' });
-    }
+    await scan.update({ status: 'running', startTime: new Date() });
+    
+    // Wait for database commit
+    await new Promise(resolve => setTimeout(resolve, 500));
+    
+    // Run scan asynchronously
+    performScan(target, scan.id)
+      .then(async (vulnCount) => {
+        // Get vulnerabilities from database
+        const vulnerabilities = await Vulnerability.findAll({ where: { scanId: scan.id } });
+        
+        await scan.update({ 
+          status: 'completed',
+          progress: 100,
+          endTime: new Date(),
+          summary: {
+            critical: vulnerabilities.filter(v => v.severity === 'critical').length,
+            high: vulnerabilities.filter(v => v.severity === 'high').length,
+            medium: vulnerabilities.filter(v => v.severity === 'medium').length,
+            low: vulnerabilities.filter(v => v.severity === 'low').length,
+            total: vulnerabilities.length
+          }
+        });
+        logger.info(`Scan completed: ${vulnerabilities.length} vulnerabilities found`);
+      })
+      .catch(async (error) => {
+        await scan.update({ 
+          status: 'failed',
+          errorMessage: error.message,
+          endTime: new Date()
+        });
+        logger.error(`Scan failed: ${error.message}`);
+      });
+      
   } catch (error) {
     logger.error('Failed to start scan', {
       scanId: scan.id,
@@ -167,6 +195,68 @@ router.post('/', authenticateToken, requireRole(['admin', 'analyst', 'viewer']),
   res.status(201).json({
     success: true,
     message: 'Scan created successfully',
+    data: { scan }
+  });
+}));
+
+// @route   POST /api/scans/binary
+// @desc    Upload and scan binary file
+// @access  Private
+router.post('/binary', authenticateToken, asyncHandler(async (req, res) => {
+  const userId = req.user.id;
+  
+  // Check if file was uploaded
+  if (!req.files || !req.files.file) {
+    return res.status(400).json({
+      success: false,
+      message: 'No file uploaded'
+    });
+  }
+  
+  const file = req.files.file;
+  const uploadDir = path.join(__dirname, '../../uploads');
+  
+  // Create uploads directory if not exists
+  if (!fs.existsSync(uploadDir)) {
+    fs.mkdirSync(uploadDir, { recursive: true });
+  }
+  
+  const filePath = path.join(uploadDir, Date.now() + '-' + file.name);
+  await file.mv(filePath);
+  
+  // Create scan record
+  const scan = await Scan.create({
+    userId,
+    name: 'Binary Scan: ' + file.name,
+    target: file.name,
+    type: 'binary',
+    status: 'pending',
+    configuration: { filePath }
+  });
+  
+  // Start binary scan asynchronously
+  scan.update({ status: 'running', startTime: new Date() });
+  
+  performBinaryScan(filePath, scan.id)
+    .then(async (vulnerabilities) => {
+      await scan.update({ 
+        status: 'completed',
+        progress: 100,
+        endTime: new Date(),
+        summary: { total: vulnerabilities.length }
+      });
+    })
+    .catch(async (error) => {
+      await scan.update({ 
+        status: 'failed',
+        errorMessage: error.message,
+        endTime: new Date()
+      });
+    });
+  
+  res.status(201).json({
+    success: true,
+    message: 'Binary scan started',
     data: { scan }
   });
 }));

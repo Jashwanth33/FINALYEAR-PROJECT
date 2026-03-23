@@ -1,0 +1,35 @@
+{
+  "timestamp": "2026-03-22T06:48:17.664495",
+  "summary": {
+    "total": 17,
+    "passed": 12,
+    "failed": 5,
+    "warnings": 0,
+    "pass_rate": 70.58823529411765
+  },
+  "results": {
+    "passed": [
+      "/api/scans - Requires Auth (Expected)",
+      "/api/vulnerabilities - Requires Auth (Expected)",
+      "/api/reports - Requires Auth (Expected)",
+      "/api/assets - Requires Auth (Expected)",
+      "/api/notifications - Requires Auth (Expected)",
+      "Login API responds correctly",
+      "Token received: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiO...",
+      "SQL injection protection active",
+      "SQL injection protection active",
+      "SQL injection protection active",
+      "XSS payload tested: 401",
+      "XSS payload tested: 401"
+    ],
+    "failed": [
+      "Scan creation failed",
+      "GET /api/vulnerabilities?limit=5 - FAIL (401)",
+      "GET /api/vulnerabilities/stats - FAIL (401)",
+      "Reports list failed: 401",
+      "Report generation failed: 401"
+    ],
+    "warnings": [],
+    "errors": []
+  }
+}

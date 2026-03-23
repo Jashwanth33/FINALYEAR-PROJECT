@@ -4,7 +4,7 @@ import toast from 'react-hot-toast';
 const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:5001/api';
 
 // Create axios instance
-const api = axios.create({
+export const api = axios.create({
   baseURL: API_BASE_URL,
   headers: {
     'Content-Type': 'application/json',
@@ -53,6 +53,16 @@ api.interceptors.response.use(
         toast.error('Session expired. Please log in again.');
         window.location.href = '/login';
       }
+    }
+    
+    // Handle 429 Rate Limit errors with retry
+    if (error.response?.status === 429) {
+      const retryAfter = error.response.headers['retry-after'] || 2;
+      console.log(`Rate limited, retrying after ${retryAfter}s`);
+      
+      // Wait and retry
+      await new Promise(resolve => setTimeout(resolve, retryAfter * 1000));
+      return api(originalRequest);
     }
     
     // Handle other HTTP errors
@@ -142,6 +152,7 @@ export const reportsAPI = {
   generateReport: (data) => api.post('/reports/generate', data),
   scheduleReport: (data) => api.post('/reports/schedule', data),
   downloadReport: (id, format = 'pdf') => api.get(`/reports/${id}/download?format=${format}`, { responseType: 'blob' }),
+  exportScan: (scanId, format = 'json') => api.get(`/reports/export/${scanId}?format=${format}`, { responseType: 'blob' }),
   deleteReport: (id) => api.delete(`/reports/${id}`),
   getReportDetails: (id) => api.get(`/reports/${id}`)
 };

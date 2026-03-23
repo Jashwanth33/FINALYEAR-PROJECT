@@ -20,7 +20,7 @@ const Scan = sequelize.define('Scan', {
     allowNull: false
   },
   type: {
-    type: DataTypes.ENUM('network', 'web', 'darkweb'),
+    type: DataTypes.ENUM('network', 'web', 'darkweb', 'binary'),
     allowNull: false
   },
   target: {

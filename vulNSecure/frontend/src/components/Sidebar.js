@@ -12,7 +12,25 @@ import {
   Settings,
   LogOut,
   Menu,
-  X
+  X,
+  File,
+  Globe,
+  Server,
+  Wifi,
+  Lock,
+  Code,
+  Zap,
+  Target,
+  Layers,
+  GitBranch,
+  MessageSquare,
+  Calendar,
+  Bug,
+  Activity,
+  Database,
+  Cloud,
+  Key,
+  RefreshCw
 } from 'lucide-react';
 
 const Sidebar = () => {
@@ -22,10 +40,15 @@ const Sidebar = () => {
 
   const navigation = [
     { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
+    { name: 'All Features', href: '/features', icon: Layers },
+    { name: 'Network Scanner', href: '/network', icon: Globe },
+    { name: 'Binary Analysis', href: '/binary', icon: File },
     { name: 'Scans', href: '/scans', icon: Search },
+    { name: 'Scheduled Scans', href: '/scheduled', icon: Calendar },
     { name: 'Vulnerabilities', href: '/vulnerabilities', icon: Shield },
-    { name: 'Data Leaks', href: '/leaks', icon: FileText },
     { name: 'Reports', href: '/reports', icon: FileText },
+    { name: 'Data Leaks', href: '/leaks', icon: Database },
+    { name: 'Settings', href: '/settings', icon: Settings },
     ...(user?.role === 'admin' ? [{ name: 'Users', href: '/users', icon: Users }] : []),
     { name: 'Profile', href: '/profile', icon: User },
   ];
@@ -78,28 +101,14 @@ const Sidebar = () => {
           </div>
         </nav>
 
-        <div className="absolute bottom-0 w-full p-3 border-t border-gray-700">
-          <div className="flex items-center px-3 py-2">
-            <div className="flex-shrink-0">
-              <div className="h-8 w-8 rounded-full bg-gray-600 flex items-center justify-center">
-                <User className="h-5 w-5 text-white" />
-              </div>
-            </div>
-            <div className="ml-3 flex-1 min-w-0">
-              <p className="text-sm font-medium text-white truncate">
-                {user?.firstName} {user?.lastName}
-              </p>
-              <p className="text-xs text-gray-400 truncate">
-                {user?.role}
-              </p>
-            </div>
-          </div>
+        {/* Logout */}
+        <div className="absolute bottom-0 w-full p-4 border-t border-gray-700">
           <button
             onClick={logout}
-            className="w-full flex items-center px-3 py-2 text-sm font-medium text-gray-300 hover:bg-gray-700 hover:text-white rounded-md transition-colors"
+            className="flex items-center w-full px-3 py-2 text-sm font-medium text-gray-300 hover:bg-gray-700 hover:text-white rounded-md transition-colors"
           >
             <LogOut className="mr-3 h-5 w-5" />
-            Sign out
+            Logout
           </button>
         </div>
       </div>

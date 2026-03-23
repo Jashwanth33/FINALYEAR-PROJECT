@@ -6,12 +6,16 @@ const CVE = require('./CVE');
 const Report = require('./Report');
 const Notification = require('./Notification');
 const AuditLog = require('./AuditLog');
+const Schedule = require('./Schedule');
+const Asset = require('./Asset');
+const ScheduledScan = require('./ScheduledScan');
 
 // User associations
 User.hasMany(Scan, { foreignKey: 'userId', as: 'scans' });
 User.hasMany(Report, { foreignKey: 'userId', as: 'reports' });
 User.hasMany(Notification, { foreignKey: 'userId', as: 'notifications' });
 User.hasMany(AuditLog, { foreignKey: 'userId', as: 'auditLogs' });
+User.hasMany(ScheduledScan, { foreignKey: 'userId', as: 'scheduledScans' });
 
 // Scan associations
 Scan.belongsTo(User, { foreignKey: 'userId', as: 'user' });
@@ -36,6 +40,14 @@ Notification.belongsTo(User, { foreignKey: 'userId', as: 'user' });
 // AuditLog associations
 AuditLog.belongsTo(User, { foreignKey: 'userId', as: 'user' });
 
+// Schedule associations
+User.hasMany(Schedule, { foreignKey: 'userId', as: 'schedules' });
+Schedule.belongsTo(User, { foreignKey: 'userId', as: 'user' });
+
+// Asset associations
+User.hasMany(Asset, { foreignKey: 'userId', as: 'assets' });
+Asset.belongsTo(User, { foreignKey: 'userId', as: 'user' });
+
 module.exports = {
   User,
   Scan,
@@ -44,5 +56,8 @@ module.exports = {
   CVE,
   Report,
   Notification,
-  AuditLog
+  AuditLog,
+  Schedule,
+  Asset,
+  ScheduledScan
 };

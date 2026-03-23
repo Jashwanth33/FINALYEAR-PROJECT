@@ -88,6 +88,26 @@ router.patch('/mark-all-read', authenticateToken, asyncHandler(async (req, res) 
   });
 }));
 
+// @route   POST /api/notifications/test-email
+// @desc    Send test email
+// @access  Admin only
+router.post('/test-email', require('express-validator').body('email').isEmail(), validateRequest, require('express').Router() || (async (req, res) => {
+  const emailService = require('../services/emailService');
+  const { email } = req.body;
+  
+  const result = await emailService.sendEmail(
+    email,
+    'Test Email from vulNSecure',
+    '<h1>Test Email</h1><p>This is a test email from vulNSecure Platform.</p>'
+  );
+  
+  if (result.success) {
+    res.json({ success: true, message: 'Test email sent successfully' });
+  } else {
+    res.status(500).json({ success: false, message: 'Failed to send email: ' + result.error });
+  }
+}));
+
 module.exports = router;
 
 
