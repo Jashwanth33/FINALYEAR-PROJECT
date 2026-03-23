@@ -1,0 +1,652 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>vulNSecure - Vulnerability Scanning Platform</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --primary: #2563eb;
+            --primary-dark: #1d4ed8;
+            --secondary: #0f172a;
+            --accent: #3b82f6;
+            --success: #22c55e;
+            --warning: #f59e0b;
+            --danger: #ef4444;
+            --text: #f8fafc;
+            --text-muted: #94a3b8;
+            --bg: #0f172a;
+            --bg-card: #1e293b;
+            --border: #334155;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            line-height: 1.6;
+        }
+
+        /* Navigation */
+        nav {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            background: rgba(15, 23, 42, 0.95);
+            backdrop-filter: blur(10px);
+            border-bottom: 1px solid var(--border);
+            z-index: 1000;
+            padding: 1rem 2rem;
+        }
+
+        nav .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        nav .logo {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--primary);
+        }
+
+        nav .logo span {
+            color: var(--text);
+        }
+
+        nav ul {
+            display: flex;
+            list-style: none;
+            gap: 2rem;
+        }
+
+        nav a {
+            color: var(--text-muted);
+            text-decoration: none;
+            transition: color 0.3s;
+        }
+
+        nav a:hover {
+            color: var(--primary);
+        }
+
+        /* Hero Section */
+        .hero {
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            padding: 6rem 2rem 4rem;
+            background: linear-gradient(135deg, var(--bg) 0%, #1a1a2e 100%);
+        }
+
+        .hero h1 {
+            font-size: 4rem;
+            font-weight: 800;
+            margin-bottom: 1.5rem;
+            background: linear-gradient(90deg, var(--primary), #06b6d4);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .hero p {
+            font-size: 1.25rem;
+            color: var(--text-muted);
+            max-width: 600px;
+            margin: 0 auto 2rem;
+        }
+
+        .hero .buttons {
+            display: flex;
+            gap: 1rem;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        .btn {
+            padding: 0.875rem 2rem;
+            border-radius: 0.5rem;
+            font-weight: 600;
+            text-decoration: none;
+            transition: all 0.3s;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .btn-primary {
+            background: var(--primary);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: var(--primary-dark);
+            transform: translateY(-2px);
+        }
+
+        .btn-secondary {
+            background: transparent;
+            border: 2px solid var(--border);
+            color: var(--text);
+        }
+
+        .btn-secondary:hover {
+            border-color: var(--primary);
+            color: var(--primary);
+        }
+
+        /* Stats */
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 2rem;
+            max-width: 1000px;
+            margin: 4rem auto;
+            padding: 0 2rem;
+        }
+
+        .stat {
+            text-align: center;
+            padding: 2rem;
+            background: var(--bg-card);
+            border-radius: 1rem;
+            border: 1px solid var(--border);
+        }
+
+        .stat h3 {
+            font-size: 3rem;
+            color: var(--primary);
+            margin-bottom: 0.5rem;
+        }
+
+        .stat p {
+            color: var(--text-muted);
+        }
+
+        /* Features Section */
+        .features {
+            padding: 6rem 2rem;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .features h2 {
+            text-align: center;
+            font-size: 2.5rem;
+            margin-bottom: 1rem;
+        }
+
+        .features > p {
+            text-align: center;
+            color: var(--text-muted);
+            margin-bottom: 4rem;
+            max-width: 600px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        .feature-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 2rem;
+        }
+
+        .feature-card {
+            background: var(--bg-card);
+            border-radius: 1rem;
+            padding: 2rem;
+            border: 1px solid var(--border);
+            transition: all 0.3s;
+        }
+
+        .feature-card:hover {
+            border-color: var(--primary);
+            transform: translateY(-5px);
+        }
+
+        .feature-card .icon {
+            width: 50px;
+            height: 50px;
+            background: linear-gradient(135deg, var(--primary), #06b6d4);
+            border-radius: 0.75rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+            margin-bottom: 1rem;
+        }
+
+        .feature-card h3 {
+            font-size: 1.25rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .feature-card p {
+            color: var(--text-muted);
+            font-size: 0.9rem;
+        }
+
+        /* Tech Stack */
+        .tech-stack {
+            padding: 6rem 2rem;
+            background: var(--bg-card);
+        }
+
+        .tech-stack .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .tech-stack h2 {
+            text-align: center;
+            font-size: 2.5rem;
+            margin-bottom: 3rem;
+        }
+
+        .tech-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 2rem;
+        }
+
+        .tech-item {
+            text-align: center;
+            padding: 1.5rem;
+            background: var(--bg);
+            border-radius: 1rem;
+            border: 1px solid var(--border);
+        }
+
+        .tech-item img {
+            width: 50px;
+            height: 50px;
+            margin-bottom: 0.5rem;
+        }
+
+        .tech-item p {
+            font-size: 0.9rem;
+            color: var(--text-muted);
+        }
+
+        /* Screenshots */
+        .screenshots {
+            padding: 6rem 2rem;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .screenshots h2 {
+            text-align: center;
+            font-size: 2.5rem;
+            margin-bottom: 3rem;
+        }
+
+        .screenshot-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+            gap: 2rem;
+        }
+
+        .screenshot {
+            background: var(--bg-card);
+            border-radius: 1rem;
+            overflow: hidden;
+            border: 1px solid var(--border);
+        }
+
+        .screenshot .preview {
+            height: 200px;
+            background: linear-gradient(135deg, var(--primary), #06b6d4);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 3rem;
+        }
+
+        .screenshot .info {
+            padding: 1.5rem;
+        }
+
+        .screenshot h3 {
+            margin-bottom: 0.5rem;
+        }
+
+        .screenshot p {
+            color: var(--text-muted);
+            font-size: 0.9rem;
+        }
+
+        /* API Section */
+        .api {
+            padding: 6rem 2rem;
+            background: var(--bg-card);
+        }
+
+        .api .container {
+            max-width: 1000px;
+            margin: 0 auto;
+        }
+
+        .api h2 {
+            text-align: center;
+            font-size: 2.5rem;
+            margin-bottom: 3rem;
+        }
+
+        .api-list {
+            display: grid;
+            gap: 1rem;
+        }
+
+        .api-item {
+            background: var(--bg);
+            border-radius: 0.5rem;
+            padding: 1rem 1.5rem;
+            border: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .api-item .method {
+            padding: 0.25rem 0.75rem;
+            border-radius: 0.25rem;
+            font-size: 0.8rem;
+            font-weight: 600;
+        }
+
+        .method-get { background: #22c55e; color: white; }
+        .method-post { background: #3b82f6; color: white; }
+        .method-put { background: #f59e0b; color: white; }
+        .method-delete { background: #ef4444; color: white; }
+
+        .api-item code {
+            flex: 1;
+            font-family: 'Fira Code', monospace;
+            color: var(--accent);
+        }
+
+        /* Footer */
+        footer {
+            padding: 4rem 2rem;
+            text-align: center;
+            border-top: 1px solid var(--border);
+        }
+
+        footer p {
+            color: var(--text-muted);
+        }
+
+        footer .links {
+            display: flex;
+            justify-content: center;
+            gap: 2rem;
+            margin-top: 1rem;
+        }
+
+        footer a {
+            color: var(--primary);
+            text-decoration: none;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .hero h1 {
+                font-size: 2.5rem;
+            }
+
+            nav ul {
+                display: none;
+            }
+
+            .stats {
+                grid-template-columns: 1fr 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Navigation -->
+    <nav>
+        <div class="container">
+            <div class="logo">vul<span>NSecure</span></div>
+            <ul>
+                <li><a href="#features">Features</a></li>
+                <li><a href="#tech">Technology</a></li>
+                <li><a href="#api">API</a></li>
+                <li><a href="https://github.com/Jashwanth33/FINALYEAR-PROJECT">GitHub</a></li>
+            </ul>
+        </div>
+    </nav>
+
+    <!-- Hero Section -->
+    <section class="hero">
+        <div>
+            <h1>vulNSecure</h1>
+            <p>Advanced Vulnerability Scanning Platform with 100+ security features. Detect SQL Injection, XSS, SSRF, and 20+ vulnerability types automatically.</p>
+            <div class="buttons">
+                <a href="https://github.com/Jashwanth33/FINALYEAR-PROJECT" class="btn btn-primary">
+                    ⭐ View on GitHub
+                </a>
+                <a href="#features" class="btn btn-secondary">
+                    📖 Explore Features
+                </a>
+            </div>
+        </div>
+    </section>
+
+    <!-- Stats -->
+    <div class="stats">
+        <div class="stat">
+            <h3>100+</h3>
+            <p>Security Features</p>
+        </div>
+        <div class="stat">
+            <h3>25+</h3>
+            <p>Vulnerability Types</p>
+        </div>
+        <div class="stat">
+            <h3>5</h3>
+            <p>Compliance Frameworks</p>
+        </div>
+        <div class="stat">
+            <h3>100%</h3>
+            <p>Free & Open Source</p>
+        </div>
+    </div>
+
+    <!-- Features -->
+    <section class="features" id="features">
+        <h2>Powerful Features</h2>
+        <p>Everything you need for comprehensive security testing</p>
+        
+        <div class="feature-grid">
+            <div class="feature-card">
+                <div class="icon">🔍</div>
+                <h3>Vulnerability Detection</h3>
+                <p>SQL Injection, XSS, SSRF, Command Injection, XXE, Open Redirect, and 20+ more vulnerability types with detailed POC.</p>
+            </div>
+            
+            <div class="feature-card">
+                <div class="icon">🌐</div>
+                <h3>Reconnaissance</h3>
+                <p>Subdomain enumeration, port scanning, DNS enumeration, technology detection, SSL/TLS analysis.</p>
+            </div>
+            
+            <div class="feature-card">
+                <div class="icon">📊</div>
+                <h3>Compliance Reports</h3>
+                <p>OWASP Top 10, PCI-DSS, HIPAA, SOC 2, GDPR compliance checking and reporting.</p>
+            </div>
+            
+            <div class="feature-card">
+                <div class="icon">🤖</div>
+                <h3>AI-Powered Analysis</h3>
+                <p>Machine learning for pattern detection, anomaly detection, and intelligent vulnerability analysis.</p>
+            </div>
+            
+            <div class="feature-card">
+                <div class="icon">🎯</div>
+                <h3>Burp Suite Features</h3>
+                <p>Request interceptor, repeater, intruder (fuzzing), sequencer (token analysis), decoder/encoder.</p>
+            </div>
+            
+            <div class="feature-card">
+                <div class="icon">🔗</div>
+                <h3>CI/CD Integration</h3>
+                <p>GitHub Actions, GitLab CI, Jenkins integration for automated security scanning in pipelines.</p>
+            </div>
+            
+            <div class="feature-card">
+                <div class="icon">👥</div>
+                <h3>Team Collaboration</h3>
+                <p>Team management, vulnerability assignment, comments, remediation tracking, activity audit log.</p>
+            </div>
+            
+            <div class="feature-card">
+                <div class="icon">🌙</div>
+                <h3>Dark Web Monitoring</h3>
+                <p>Breach detection, credential leak monitoring, paste site monitoring, threat intelligence feeds.</p>
+            </div>
+            
+            <div class="feature-card">
+                <div class="icon">📅</div>
+                <h3>Scheduled Scanning</h3>
+                <p>Automated daily/weekly/monthly scans with email notifications and PDF report generation.</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- Tech Stack -->
+    <section class="tech-stack" id="tech">
+        <div class="container">
+            <h2>Technology Stack</h2>
+            <div class="tech-grid">
+                <div class="tech-item">
+                    <div style="font-size: 2rem;">⚛️</div>
+                    <p>React 18</p>
+                </div>
+                <div class="tech-item">
+                    <div style="font-size: 2rem;">🟢</div>
+                    <p>Node.js</p>
+                </div>
+                <div class="tech-item">
+                    <div style="font-size: 2rem;">🚀</div>
+                    <p>Express.js</p>
+                </div>
+                <div class="tech-item">
+                    <div style="font-size: 2rem;">🗄️</div>
+                    <p>SQLite/PostgreSQL</p>
+                </div>
+                <div class="tech-item">
+                    <div style="font-size: 2rem;">🎨</div>
+                    <p>Tailwind CSS</p>
+                </div>
+                <div class="tech-item">
+                    <div style="font-size: 2rem;">📊</div>
+                    <p>Recharts</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Screenshots -->
+    <section class="screenshots">
+        <h2>Screenshots</h2>
+        <div class="screenshot-grid">
+            <div class="screenshot">
+                <div class="preview">📊</div>
+                <div class="info">
+                    <h3>Dashboard</h3>
+                    <p>Real-time overview with vulnerability statistics, risk scores, and recent activity.</p>
+                </div>
+            </div>
+            
+            <div class="screenshot">
+                <div class="preview">🔍</div>
+                <div class="info">
+                    <h3>Network Scanner</h3>
+                    <p>Comprehensive web vulnerability scanning with 25+ vulnerability types.</p>
+                </div>
+            </div>
+            
+            <div class="screenshot">
+                <div class="preview">🎯</div>
+                <div class="info">
+                    <h3>Vulnerability Details</h3>
+                    <p>Detailed findings with POC, CVSS scores, and step-by-step remediation.</p>
+                </div>
+            </div>
+            
+            <div class="screenshot">
+                <div class="preview">📈</div>
+                <div class="info">
+                    <h3>Reports</h3>
+                    <p>Professional reports in PDF, CSV, JSON, and Excel formats.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- API Section -->
+    <section class="api" id="api">
+        <div class="container">
+            <h2>API Endpoints</h2>
+            <div class="api-list">
+                <div class="api-item">
+                    <span class="method method-post">POST</span>
+                    <code>/api/auth/login</code>
+                    <span>User authentication</span>
+                </div>
+                <div class="api-item">
+                    <span class="method method-post">POST</span>
+                    <code>/api/scans</code>
+                    <span>Create new scan</span>
+                </div>
+                <div class="api-item">
+                    <span class="method method-get">GET</span>
+                    <code>/api/vulnerabilities</code>
+                    <span>List vulnerabilities</span>
+                </div>
+                <div class="api-item">
+                    <span class="method method-post">POST</span>
+                    <code>/api/pro/subdomains</code>
+                    <span>Subdomain enumeration</span>
+                </div>
+                <div class="api-item">
+                    <span class="method method-post">POST</span>
+                    <code>/api/complete/compliance</code>
+                    <span>Compliance check</span>
+                </div>
+                <div class="api-item">
+                    <span class="method method-get">GET</span>
+                    <code>/api/new/report/:id</code>
+                    <span>Download PDF report</span>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer>
+        <p>Built with ❤️ for cybersecurity education</p>
+        <div class="links">
+            <a href="https://github.com/Jashwanth33/FINALYEAR-PROJECT">GitHub</a>
+            <a href="https://github.com/Jashwanth33/FINALYEAR-PROJECT/blob/master/README.md">Documentation</a>
+            <a href="https://github.com/Jashwanth33/FINALYEAR-PROJECT/issues">Report Issue</a>
+        </div>
+    </footer>
+</body>
+</html>
