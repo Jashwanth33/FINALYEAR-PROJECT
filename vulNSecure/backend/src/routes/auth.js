@@ -3,10 +3,11 @@ const { body } = require('express-validator');
 const jwt = require('jsonwebtoken');
 const crypto = require('crypto');
 const { Op } = require('sequelize');
-const { User } = require('../models');
+const { User, Session } = require('../models');
 const { authenticateToken, requireRole } = require('../middleware/auth');
 const { validateRequest, asyncHandler } = require('../middleware/errorHandler');
 const { logger } = require('../utils/logger');
+const crypto = require('crypto');
 
 const router = express.Router();
 
@@ -139,6 +140,28 @@ router.post('/login', [
 
   const token = generateToken(user.id);
 
+  // Create session record
+  const ua = req.headers['user-agent'] || '';
+  const deviceType = /mobile|android|iphone|ipad|ipod/i.test(ua) ? 'mobile' : /tablet|kindle/i.test(ua) ? 'tablet' : 'desktop';
+  const tokenHash = crypto.createHash('sha256').update(token).digest('hex');
+  const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
+
+  await Session.create({
+    userId: user.id,
+    tokenHash,
+    ipAddress: req.ip || req.connection?.remoteAddress || 'unknown',
+    userAgent: ua,
+    deviceType,
+    lastActivity: new Date(),
+    expiresAt
+  });
+
+  // Deactivate old expired sessions
+  await Session.update(
+    { isActive: false },
+    { where: { userId: user.id, expiresAt: { [require('sequelize').Op.lt]: new Date() } } }
+  );
+
   logger.info('User logged in', {
     userId: user.id,
     username: user.username,
@@ -153,8 +176,7 @@ router.post('/login', [
       user: user.toJSON(),
       token
     }
-  });
-}));
+  }));
 
 // @route   GET /api/auth/me
 // @desc    Get current user

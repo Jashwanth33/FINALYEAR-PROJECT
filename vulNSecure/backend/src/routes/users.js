@@ -1,9 +1,11 @@
 const express = require('express');
 const { body, param } = require('express-validator');
 const { Op } = require('sequelize');
-const { User, Notification } = require('../models');
+const crypto = require('crypto');
+const { User, Notification, Session } = require('../models');
 const { authenticateToken, requireRole } = require('../middleware/auth');
 const { validateRequest, asyncHandler } = require('../middleware/errorHandler');
+const { logger } = require('../utils/logger');
 
 const router = express.Router();
 
@@ -295,12 +297,72 @@ router.get('/:id/sessions', authenticateToken, [
     });
   }
 
-  // Return empty sessions for now - can be extended with Session model
+  // Get active sessions for the user
+  const sessions = await Session.findAll({
+    where: { userId: id, isActive: true },
+    order: [['lastActivity', 'DESC']],
+    attributes: ['id', 'ipAddress', 'userAgent', 'deviceType', 'location', 'lastActivity', 'createdAt', 'expiresAt']
+  });
+
   res.json({
     success: true,
     data: {
-      sessions: []
+      sessions: sessions.map(s => s.toJSON ? s.toJSON() : s)
     }
+  });
+}));
+
+// @route   DELETE /api/users/:userId/sessions/:sessionId
+// @desc    Revoke a user session
+// @access  Private
+router.delete('/:userId/sessions/:sessionId', authenticateToken, [
+  param('userId').isUUID().withMessage('Invalid user ID'),
+  param('sessionId').isUUID().withMessage('Invalid session ID')
+], validateRequest, asyncHandler(async (req, res) => {
+  const { userId, sessionId } = req.params;
+  const currentUserId = req.user.id;
+
+  // Users can only revoke their own sessions unless they're admin
+  if (req.user.role !== 'admin' && userId !== currentUserId) {
+    return res.status(403).json({
+      success: false,
+      message: 'Access denied'
+    });
+  }
+
+  // Don't allow revoking the current session
+  const ua = req.headers['user-agent'] || '';
+  const currentTokenHash = crypto.createHash('sha256').update(req.headers['authorization']?.split(' ')[1] || '').digest('hex');
+
+  const session = await Session.findOne({
+    where: { id: sessionId, userId, isActive: true }
+  });
+
+  if (!session) {
+    return res.status(404).json({
+      success: false,
+      message: 'Session not found'
+    });
+  }
+
+  if (session.tokenHash === currentTokenHash) {
+    return res.status(400).json({
+      success: false,
+      message: 'Cannot revoke current session'
+    });
+  }
+
+  await session.update({ isActive: false });
+
+  logger.info('Session revoked', {
+    userId,
+    sessionId,
+    revokedBy: currentUserId
+  });
+
+  res.json({
+    success: true,
+    message: 'Session revoked successfully'
   });
 }));
 

@@ -9,6 +9,7 @@ const AuditLog = require('./AuditLog');
 const Schedule = require('./Schedule');
 const Asset = require('./Asset');
 const ScheduledScan = require('./ScheduledScan');
+const Session = require('./Session');
 
 // User associations
 User.hasMany(Scan, { foreignKey: 'userId', as: 'scans' });
@@ -48,6 +49,10 @@ Schedule.belongsTo(User, { foreignKey: 'userId', as: 'user' });
 User.hasMany(Asset, { foreignKey: 'userId', as: 'assets' });
 Asset.belongsTo(User, { foreignKey: 'userId', as: 'user' });
 
+// Session associations
+User.hasMany(Session, { foreignKey: 'userId', as: 'sessions' });
+Session.belongsTo(User, { foreignKey: 'userId', as: 'user' });
+
 module.exports = {
   User,
   Scan,
@@ -59,5 +64,6 @@ module.exports = {
   AuditLog,
   Schedule,
   Asset,
-  ScheduledScan
+  ScheduledScan,
+  Session
 };

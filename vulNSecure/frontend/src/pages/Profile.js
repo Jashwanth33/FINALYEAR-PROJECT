@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
 import { useAuth } from '../context/AuthContext';
-import { useQuery } from 'react-query';
+import { useQuery, useMutation, useQueryClient } from 'react-query';
 import { usersAPI } from '../services/api';
+import toast from 'react-hot-toast';
 import { 
   User, 
   Mail, 
@@ -64,8 +65,32 @@ const Profile = () => {
     { enabled: !!user?.id }
   );
 
+  const queryClient = useQueryClient();
+
+  const revokeSessionMutation = useMutation(
+    (sessionId) => usersAPI.revokeSession(user.id, sessionId),
+    {
+      onSuccess: () => {
+        queryClient.invalidateQueries(['userSessions', user?.id]);
+        toast.success('Session revoked successfully');
+      },
+      onError: (error) => {
+        toast.error(error.response?.data?.message || 'Failed to revoke session');
+      }
+    }
+  );
+
+  const handleRevokeSession = (sessionId) => {
+    if (window.confirm('Are you sure you want to revoke this session?')) {
+      revokeSessionMutation.mutate(sessionId);
+    }
+  };
+
   const activities = activityData?.data?.activities || [];
   const sessions = sessionsData?.data?.sessions || [];
+
+  // Determine current session by matching user agent (approximate)
+  const currentUserAgent = navigator.userAgent || '';
 
   if (!user) {
     return (
@@ -492,29 +517,36 @@ const Profile = () => {
             </div>
           ) : (
             <div className="space-y-4">
-              {sessions.map((session) => (
-                <div key={session.id} className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
-                  <div className="flex items-center space-x-3">
-                    {getDeviceIcon(session.deviceType)}
-                    <div>
-                      <p className="text-sm font-medium text-gray-900">
-                        {session.deviceType === 'mobile' ? 'Mobile Device' : 'Desktop'}
-                        {session.isCurrent && <span className="ml-2 text-xs text-green-600">(Current)</span>}
-                      </p>
-                      <div className="text-xs text-gray-500 space-y-1">
-                        <div>IP: {session.ipAddress}</div>
-                        <div>Location: {session.location}</div>
-                        <div>Last active: {new Date(session.lastActivity).toLocaleString()}</div>
+              {sessions.map((session) => {
+                const isCurrent = session.userAgent === currentUserAgent;
+                return (
+                  <div key={session.id} className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+                    <div className="flex items-center space-x-3">
+                      {getDeviceIcon(session.deviceType)}
+                      <div>
+                        <p className="text-sm font-medium text-gray-900">
+                          {session.deviceType === 'mobile' ? 'Mobile Device' : 'Desktop'}
+                          {isCurrent && <span className="ml-2 text-xs text-green-600">(Current)</span>}
+                        </p>
+                        <div className="text-xs text-gray-500 space-y-1">
+                          <div>IP: {session.ipAddress}</div>
+                          <div>Location: {session.location || 'Unknown'}</div>
+                          <div>Last active: {new Date(session.lastActivity).toLocaleString()}</div>
+                        </div>
                       </div>
                     </div>
+                    {!isCurrent && (
+                      <button
+                        onClick={() => handleRevokeSession(session.id)}
+                        className="btn btn-danger btn-sm"
+                        disabled={revokeSessionMutation.isLoading}
+                      >
+                        Revoke
+                      </button>
+                    )}
                   </div>
-                  {!session.isCurrent && (
-                    <button className="btn btn-danger btn-sm">
-                      Revoke
-                    </button>
-                  )}
-                </div>
-              ))}
+                );
+              })}
             </div>
           )}
         </div>
